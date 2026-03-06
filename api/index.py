@@ -104,7 +104,7 @@ async def health():
         "build_id": BUILD_ID,
         "persona": "Faith", 
         "key_set": api_key is not None,
-        "available_models": models[:10]
+        "available_models": models
     }
 
 @app.post("/api/chat")
