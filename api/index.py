@@ -70,8 +70,8 @@ def get_chat_response(message, history):
         # Use REST transport for predictability in serverless
         genai.configure(api_key=api_key, transport='rest')
         
-        # We'll try the most standard name first
-        model_name = 'gemini-1.5-flash'
+        # Use gemini-2.0-flash which was confirmed present in health check
+        model_name = 'gemini-2.0-flash'
         model = genai.GenerativeModel(model_name, system_instruction=FAITH_SYSTEM_PROMPT)
         
         # Start chat and send message
