@@ -69,23 +69,35 @@ def get_chat_response(message, history):
     if not api_key:
         return "Hi Kapatid! It look's like the GEMINI_API_KEY is not set in Vercel's environment variables. Please add it so I can connect to my brain!"
     
+    # List of models to try in order of preference/compatibility
+    models_to_try = [
+        'gemini-1.5-flash',
+        'gemini-1.5-flash-8b',
+        'gemini-1.5-pro',
+        'gemini-2.0-flash'
+    ]
+    
+    last_error = ""
     try:
-        # Use REST transport for predictability in serverless
         genai.configure(api_key=api_key, transport='rest')
         
-        # Use the exact full name from the list_models diagnostic
-        model_name = 'models/gemini-2.0-flash'
-        model = genai.GenerativeModel(model_name, system_instruction=FAITH_SYSTEM_PROMPT)
+        for model_name in models_to_try:
+            try:
+                model = genai.GenerativeModel(model_name, system_instruction=FAITH_SYSTEM_PROMPT)
+                chat_session = model.start_chat(history=history)
+                response = chat_session.send_message(message)
+                return response.text
+            except Exception as inner_e:
+                last_error = str(inner_e)
+                # If it's a quota or 404 error, try the next model
+                if "429" in last_error or "404" in last_error:
+                    continue
+                # For other errors, stop and report
+                return f"Error with {model_name}: {last_error}"
         
-        # Start chat and send message
-        chat_session = model.start_chat(history=history)
-        response = chat_session.send_message(message)
-        return response.text
+        return f"Error: All models (1.5, 2.0) failed. Last error: {last_error}. Please check your Gemini API quota."
     except Exception as e:
-        error_msg = str(e)
-        if "404" in error_msg:
-            return f"Error 404: The model '{model_name}' was not found. Your key might not have access or the name changed. Technical detail: {error_msg}"
-        return f"Error: {error_msg}"
+        return f"Critical Error: {str(e)}"
 
 @app.get("/api/health")
 async def health():
