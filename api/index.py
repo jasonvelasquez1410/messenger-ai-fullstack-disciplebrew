@@ -58,6 +58,10 @@ app.add_middleware(
 # Configure Gemini
 api_key = os.getenv("GEMINI_API_KEY")
 
+class ChatRequest(BaseModel):
+    message: str
+    history: list = []
+
 def get_chat_response(message, history):
     if not api_key:
         return "Hi Kapatid! It look's like the GEMINI_API_KEY is not set in Vercel's environment variables. Please add it so I can connect to my brain!"
