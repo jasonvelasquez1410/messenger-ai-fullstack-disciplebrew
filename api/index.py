@@ -67,12 +67,23 @@ def get_chat_response(message, history):
         return "Hi Kapatid! It look's like the GEMINI_API_KEY is not set in Vercel's environment variables. Please add it so I can connect to my brain!"
     
     try:
-        genai.configure(api_key=api_key)
-        # We re-initialize the model to ensure it uses the latest system instruction
-        model = genai.GenerativeModel('gemini-1.5-flash', system_instruction=FAITH_SYSTEM_PROMPT)
-        chat_session = model.start_chat(history=history)
-        response = chat_session.send_message(message)
-        return response.text
+        # Use REST transport as it's more stable in serverless environments
+        genai.configure(api_key=api_key, transport='rest')
+        
+        # Try gemini-1.5-flash-latest as it's often more resilient to naming changes
+        try:
+            model = genai.GenerativeModel('gemini-1.5-flash-latest', system_instruction=FAITH_SYSTEM_PROMPT)
+            chat_session = model.start_chat(history=history)
+            response = chat_session.send_message(message)
+            return response.text
+        except Exception as e:
+            if "404" in str(e):
+                # Fallback to the explicit version if latest fails
+                model = genai.GenerativeModel('gemini-1.5-flash', system_instruction=FAITH_SYSTEM_PROMPT)
+                chat_session = model.start_chat(history=history)
+                response = chat_session.send_message(message)
+                return response.text
+            raise e
     except Exception as e:
         return f"Error: {str(e)}"
 
