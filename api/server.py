@@ -9,7 +9,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 # Build Identifier to verify redeploy
-BUILD_ID = "SERVER_PY_FINAL_REDEPLOY"
+BUILD_ID = "V_ULTIMATE_STABLE_V6"
 
 FAITH_SYSTEM_PROMPT = """
 You are 'Faith,' the digital assistant for Disciple Brew, a faith-based specialty coffee shop in Manila.
