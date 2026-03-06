@@ -37,7 +37,7 @@ async def health():
 @app.post("/api/chat")
 async def chat(request: ChatRequest):
     if not api_key:
-        return {"reply": "Hi Higala! I'm Faith. My brain (API Key) isn't connected yet, but I'm ready to serve you coffee! (Please add GEMINI_API_KEY to your env)"}
+        return {"reply": "Welcome to Disciple Brew! I'm Faith. My brain (API Key) isn't connected yet, but I'm ready to serve you coffee! God bless!"}
     
     try:
         chat_session = model.start_chat(history=request.history)

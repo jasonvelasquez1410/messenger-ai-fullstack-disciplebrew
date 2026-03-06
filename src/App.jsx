@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 
 const App = () => {
   const [messages, setMessages] = useState([
-    { role: 'model', content: "Hi Higala! I'm Faith, your digital assistant for Disciple Brew. How can I help you today?" }
+    { role: 'model', content: "Welcome to Disciple Brew! I'm Faith, your digital assistant. How can I serve you today? God bless!" }
   ]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -67,12 +67,11 @@ const App = () => {
       <div className="flex-1 overflow-y-auto p-4 space-y-4">
         {messages.map((m, i) => (
           <div key={i} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-            <div 
-              className={`max-w-[75%] px-4 py-2 rounded-2xl ${
-                m.role === 'user' 
-                  ? 'bg-blue-500 text-white rounded-tr-none' 
+            <div
+              className={`max-w-[75%] px-4 py-2 rounded-2xl ${m.role === 'user'
+                  ? 'bg-blue-500 text-white rounded-tr-none'
                   : 'bg-gray-200 text-gray-800 rounded-tl-none'
-              }`}
+                }`}
             >
               {m.content}
             </div>
