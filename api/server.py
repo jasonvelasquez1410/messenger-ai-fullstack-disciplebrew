@@ -69,7 +69,7 @@ def get_chat_response(message, history):
     if not api_key:
         return "Hi Kapatid! It look's like the GEMINI_API_KEY is not set in Vercel's environment variables. Please add it so I can connect to my brain!"
     
-    # We prefer flash-lite as it might have a better quota for this key
+    # Prioritize 2.0 models which were confirmed available in health check
     models_to_try = [
         'models/gemini-2.0-flash-lite',
         'models/gemini-2.0-flash',
