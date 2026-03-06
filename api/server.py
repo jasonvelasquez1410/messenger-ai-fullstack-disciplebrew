@@ -9,7 +9,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 # Build Identifier to verify redeploy
-BUILD_ID = "V_ULTIMATE_STABLE_V6"
+BUILD_ID = "V_ADAPTIVE_ENGINE_V7"
 
 FAITH_SYSTEM_PROMPT = """
 You are 'Faith,' the digital assistant for Disciple Brew, a faith-based specialty coffee shop in Manila.
@@ -81,23 +81,37 @@ def get_chat_response(message, history):
     try:
         genai.configure(api_key=api_key, transport='rest')
         
-        for model_name in models_to_try:
+        # 1. Fetch available models dynamically from the key itself
+        available_models = []
+        try:
+            for m in genai.list_models():
+                if 'generateContent' in m.supported_generation_methods:
+                    available_models.append(m.name)
+        except Exception:
+            available_models = ['models/gemini-1.5-flash', 'models/gemini-2.0-flash-lite']
+
+        # 2. Set priority list
+        priority = ['models/gemini-2.0-flash-lite', 'models/gemini-1.5-flash', 'models/gemini-2.0-flash']
+        to_try = [m for m in priority if m in available_models]
+        to_try += [m for m in available_models if m not in to_try]
+        
+        # 3. Try each model until one works
+        last_err = ""
+        for model_name in to_try:
             try:
                 model = genai.GenerativeModel(model_name, system_instruction=FAITH_SYSTEM_PROMPT)
-                chat_session = model.start_chat(history=history)
+                chat_session = model.start_chat(history=history or [])
                 response = chat_session.send_message(message)
                 return response.text
-            except Exception as inner_e:
-                last_error = str(inner_e)
-                # If it's a quota or 404 error, try the next model
-                if "429" in last_error or "404" in last_error:
+            except Exception as e:
+                last_err = str(e)
+                if "429" in last_err or "404" in last_err:
                     continue
-                # For other errors, stop and report
-                return f"Error with {model_name}: {last_error}"
+                return f"Error with {model_name}: {last_err}"
         
-        return f"Error: All models (1.5, 2.0) failed. Last error: {last_error}. Please check your Gemini API quota."
+        return f"Error: No functional models found for this API key. List: {available_models}. Last error: {last_err}"
     except Exception as e:
-        return f"Critical Error: {str(e)}"
+        return f"Critical Connectivity Error: {str(e)}"
 
 @app.get("/api/health")
 async def health():
