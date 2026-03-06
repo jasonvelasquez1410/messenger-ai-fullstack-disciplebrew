@@ -57,29 +57,29 @@ app.add_middleware(
 
 # Configure Gemini
 api_key = os.getenv("GEMINI_API_KEY")
-if api_key:
-    genai.configure(api_key=api_key)
-model = genai.GenerativeModel('gemini-1.5-flash', system_instruction=FAITH_SYSTEM_PROMPT)
 
-class ChatRequest(BaseModel):
-    message: str
-    history: list = []
+def get_chat_response(message, history):
+    if not api_key:
+        return "Hi Kapatid! It look's like the GEMINI_API_KEY is not set in Vercel's environment variables. Please add it so I can connect to my brain!"
+    
+    try:
+        genai.configure(api_key=api_key)
+        # We re-initialize the model to ensure it uses the latest system instruction
+        model = genai.GenerativeModel('gemini-1.5-flash', system_instruction=FAITH_SYSTEM_PROMPT)
+        chat_session = model.start_chat(history=history)
+        response = chat_session.send_message(message)
+        return response.text
+    except Exception as e:
+        return f"Error: {str(e)}"
 
 @app.get("/api/health")
 async def health():
-    return {"status": "ok", "persona": "Faith"}
+    return {"status": "ok", "persona": "Faith", "key_set": api_key is not None}
 
 @app.post("/api/chat")
 async def chat(request: ChatRequest):
-    if not api_key:
-        return {"reply": "Welcome to Disciple Brew! I'm Faith. My brain (API Key) isn't connected yet, but I'm ready to serve you coffee! God bless!"}
-    
-    try:
-        chat_session = model.start_chat(history=request.history)
-        response = chat_session.send_message(request.message)
-        return {"reply": response.text}
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+    reply = get_chat_response(request.message, request.history)
+    return {"reply": reply}
 
 # For Vercel deployment
 handler = Mangum(app)

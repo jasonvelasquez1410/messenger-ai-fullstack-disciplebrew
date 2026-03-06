@@ -37,11 +37,16 @@ const App = () => {
         body: JSON.stringify({ message: input, history })
       });
 
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`Server returned ${response.status}: ${errorText}`);
+      }
+
       const data = await response.json();
       setMessages(prev => [...prev, { role: 'model', content: data.reply }]);
     } catch (error) {
-      console.error('Error:', error);
-      setMessages(prev => [...prev, { role: 'model', content: "Pasensya na, Kapatid. There was an error connecting to my brain. Please check the console or ensure the GEMINI_API_KEY is set in Vercel." }]);
+      console.error('Error detail:', error);
+      setMessages(prev => [...prev, { role: 'model', content: `Pasensya na, Kapatid. I encountered an error: ${error.message}. Mangyaring i-check ang GEMINI_API_KEY settings sa Vercel.` }]);
     } finally {
       setIsLoading(false);
     }
