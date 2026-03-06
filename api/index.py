@@ -8,6 +8,9 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
+# Build Identifier to verify redeploy
+BUILD_ID = "MODEL_UPGRADE_V3_2.0_FLASH"
+
 FAITH_SYSTEM_PROMPT = """
 You are 'Faith,' the digital assistant for Disciple Brew, a faith-based specialty coffee shop in Manila.
 
@@ -70,8 +73,8 @@ def get_chat_response(message, history):
         # Use REST transport for predictability in serverless
         genai.configure(api_key=api_key, transport='rest')
         
-        # Use gemini-2.0-flash which was confirmed present in health check
-        model_name = 'gemini-2.0-flash'
+        # Use the exact full name from the list_models diagnostic
+        model_name = 'models/gemini-2.0-flash'
         model = genai.GenerativeModel(model_name, system_instruction=FAITH_SYSTEM_PROMPT)
         
         # Start chat and send message
@@ -81,7 +84,7 @@ def get_chat_response(message, history):
     except Exception as e:
         error_msg = str(e)
         if "404" in error_msg:
-            return f"Error 404: The model could not be found. Please check if your API key has access to 'gemini-1.5-flash'. Technical detail: {error_msg}"
+            return f"Error 404: The model '{model_name}' was not found. Your key might not have access or the name changed. Technical detail: {error_msg}"
         return f"Error: {error_msg}"
 
 @app.get("/api/health")
@@ -98,9 +101,10 @@ async def health():
     
     return {
         "status": "ok", 
+        "build_id": BUILD_ID,
         "persona": "Faith", 
         "key_set": api_key is not None,
-        "available_models": models[:10] # Return first 10 for brevity
+        "available_models": models[:10]
     }
 
 @app.post("/api/chat")
