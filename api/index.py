@@ -4,7 +4,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 import google.generativeai as genai
 from dotenv import load_dotenv
-from mangum import Mangum
+
 
 load_dotenv()
 
@@ -85,5 +85,4 @@ async def chat(request: ChatRequest):
     reply = get_chat_response(request.message, request.history)
     return {"reply": reply}
 
-# For Vercel deployment
-handler = Mangum(app)
+
