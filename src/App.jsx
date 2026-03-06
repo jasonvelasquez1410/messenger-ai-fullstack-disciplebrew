@@ -41,7 +41,7 @@ const App = () => {
       setMessages(prev => [...prev, { role: 'model', content: data.reply }]);
     } catch (error) {
       console.error('Error:', error);
-      setMessages(prev => [...prev, { role: 'model', content: "Pasensya na, Higala. There was an error connecting to my brain. Please check the console." }]);
+      setMessages(prev => [...prev, { role: 'model', content: "Pasensya na, Kapatid. There was an error connecting to my brain. Please check the console or ensure the GEMINI_API_KEY is set in Vercel." }]);
     } finally {
       setIsLoading(false);
     }
@@ -69,8 +69,8 @@ const App = () => {
           <div key={i} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
             <div
               className={`max-w-[75%] px-4 py-2 rounded-2xl ${m.role === 'user'
-                  ? 'bg-blue-500 text-white rounded-tr-none'
-                  : 'bg-gray-200 text-gray-800 rounded-tl-none'
+                ? 'bg-blue-500 text-white rounded-tr-none'
+                : 'bg-gray-200 text-gray-800 rounded-tl-none'
                 }`}
             >
               {m.content}
