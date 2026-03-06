@@ -9,7 +9,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 # Build Identifier to verify redeploy
-BUILD_ID = "V_FINAL_ROBUST_REDEPLOY"
+BUILD_ID = "SERVER_PY_FINAL_REDEPLOY"
 
 FAITH_SYSTEM_PROMPT = """
 You are 'Faith,' the digital assistant for Disciple Brew, a faith-based specialty coffee shop in Manila.
@@ -69,13 +69,12 @@ def get_chat_response(message, history):
     if not api_key:
         return "Hi Kapatid! It look's like the GEMINI_API_KEY is not set in Vercel's environment variables. Please add it so I can connect to my brain!"
     
-    # List of models to try in order of preference/compatibility
-    # We use the full 'models/' prefix which is safer for REST transport
+    # We prefer flash-lite as it might have a better quota for this key
     models_to_try = [
-        'models/gemini-1.5-flash',
-        'models/gemini-1.5-flash-8b',
+        'models/gemini-2.0-flash-lite',
         'models/gemini-2.0-flash',
-        'models/gemini-1.5-pro'
+        'models/gemini-1.5-flash',
+        'models/gemini-1.5-flash-8b'
     ]
     
     last_error = ""
