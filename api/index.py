@@ -67,29 +67,41 @@ def get_chat_response(message, history):
         return "Hi Kapatid! It look's like the GEMINI_API_KEY is not set in Vercel's environment variables. Please add it so I can connect to my brain!"
     
     try:
-        # Use REST transport as it's more stable in serverless environments
+        # Use REST transport for predictability in serverless
         genai.configure(api_key=api_key, transport='rest')
         
-        # Try gemini-1.5-flash-latest as it's often more resilient to naming changes
-        try:
-            model = genai.GenerativeModel('gemini-1.5-flash-latest', system_instruction=FAITH_SYSTEM_PROMPT)
-            chat_session = model.start_chat(history=history)
-            response = chat_session.send_message(message)
-            return response.text
-        except Exception as e:
-            if "404" in str(e):
-                # Fallback to the explicit version if latest fails
-                model = genai.GenerativeModel('gemini-1.5-flash', system_instruction=FAITH_SYSTEM_PROMPT)
-                chat_session = model.start_chat(history=history)
-                response = chat_session.send_message(message)
-                return response.text
-            raise e
+        # We'll try the most standard name first
+        model_name = 'gemini-1.5-flash'
+        model = genai.GenerativeModel(model_name, system_instruction=FAITH_SYSTEM_PROMPT)
+        
+        # Start chat and send message
+        chat_session = model.start_chat(history=history)
+        response = chat_session.send_message(message)
+        return response.text
     except Exception as e:
-        return f"Error: {str(e)}"
+        error_msg = str(e)
+        if "404" in error_msg:
+            return f"Error 404: The model could not be found. Please check if your API key has access to 'gemini-1.5-flash'. Technical detail: {error_msg}"
+        return f"Error: {error_msg}"
 
 @app.get("/api/health")
 async def health():
-    return {"status": "ok", "persona": "Faith", "key_set": api_key is not None}
+    models = []
+    if api_key:
+        try:
+            genai.configure(api_key=api_key, transport='rest')
+            for m in genai.list_models():
+                if 'generateContent' in m.supported_generation_methods:
+                    models.append(m.name)
+        except Exception as e:
+            models = [f"Error listing models: {str(e)}"]
+    
+    return {
+        "status": "ok", 
+        "persona": "Faith", 
+        "key_set": api_key is not None,
+        "available_models": models[:10] # Return first 10 for brevity
+    }
 
 @app.post("/api/chat")
 async def chat(request: ChatRequest):
