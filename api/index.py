@@ -69,6 +69,24 @@ def get_chat_response(message, history):
     if not api_key:
         return "Hi Kapatid! It look's like the GEMINI_API_KEY is not set in Vercel's environment variables. Please add it so I can connect to my brain!"
     
+    # Normalize history to Gemini format {role, parts: [{text}]}
+    normalized_history = []
+    for h in (history or []):
+        # Gemini history MUST have role 'user' and 'model'
+        # Crucially, it must NOT start with a model message
+        role = "model" if h.get("role") == "model" else "user"
+        
+        # Skip initial model message to avoid Gemini validation error
+        if not normalized_history and role == "model":
+            continue
+            
+        if "parts" in h:
+            normalized_history.append({"role": role, "parts": h["parts"]})
+        elif "content" in h:
+            normalized_history.append({"role": role, "parts": [{"text": h["content"]}]})
+        else:
+            continue
+    
     # Prioritize 2.0 models which were confirmed available in health check
     models_to_try = [
         'models/gemini-2.0-flash-lite',
@@ -100,7 +118,7 @@ def get_chat_response(message, history):
         for model_name in to_try:
             try:
                 model = genai.GenerativeModel(model_name, system_instruction=FAITH_SYSTEM_PROMPT)
-                chat_session = model.start_chat(history=history or [])
+                chat_session = model.start_chat(history=normalized_history)
                 response = chat_session.send_message(message)
                 return response.text
             except Exception as e:
