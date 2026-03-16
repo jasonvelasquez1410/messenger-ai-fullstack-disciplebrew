@@ -45,23 +45,39 @@ const App = () => {
 
     const toggleCall = async () => {
         if (isCalling || vapiStatus === 'active') { vapi.stop(); return; }
+        
+        // Detect in-app browsers (Facebook, Messenger, Instagram) which often block microphone access
+        const ua = navigator.userAgent || navigator.vendor || window.opera;
+        const isInAppBrowser = (ua.indexOf("FBAN") > -1) || (ua.indexOf("FBAV") > -1) || (ua.indexOf("Instagram") > -1);
+        
+        if (isInAppBrowser) {
+            setVapiStatus('error');
+            setVapiError("Voice calls are blocked by Messenger. Tap the 3 dots (top right) and select 'Open in browser' (Chrome/Safari).");
+            return;
+        }
+
+        if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+            setVapiStatus('error');
+            setVapiError("Microphone missing. Please open this page in your phone's default browser (Safari/Chrome).");
+            return;
+        }
+
         try {
             setVapiStatus('calling');
+            setVapiError(null);
             
             // Explicitly request microphone permissions. On mobile (especially iOS Safari),
             // this is required immediately in the user interaction event to avoid blocking audio context.
-            if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
-                await navigator.mediaDevices.getUserMedia({ audio: true });
-            }
+            await navigator.mediaDevices.getUserMedia({ audio: true });
 
             await vapi.start(clientConfig.vapi_assistant_id);
             setTimeout(() => {
                 setVapiStatus(p => (p === 'calling' ? 'idle' : p));
-            }, 15000);
+            }, 10000);
         } catch (err) {
             console.error("Call error:", err);
             setVapiStatus('error');
-            setVapiError(err.message || "Failed to start call. Ensure mic permissions are granted.");
+            setVapiError("Connection failed. Please ensure mic permissions are granted in your browser settings.");
             // Make sure to reset state if it fails so user can try again
             setIsCalling(false);
         }
