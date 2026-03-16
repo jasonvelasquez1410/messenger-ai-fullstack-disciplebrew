@@ -26,8 +26,24 @@ const App = () => {
     const messagesEndRef = useRef(null);
     const scrollContainerRef = useRef(null);
 
+    const [isInAppBrowser, setIsInAppBrowser] = useState(false);
+
     useEffect(() => {
         document.title = `${clientConfig.business_name} - AI Live Demo`;
+
+        // Detect in-app browsers
+        const ua = navigator.userAgent || navigator.vendor || window.opera;
+        const isFacebookApp = (ua.indexOf("FBAN") > -1) || (ua.indexOf("FBAV") > -1) || (ua.indexOf("Instagram") > -1);
+        
+        if (isFacebookApp) {
+            setIsInAppBrowser(true);
+            const isAndroid = /android/i.test(ua);
+            if (isAndroid) {
+                // Auto-redirect for Android
+                const currentUrl = window.location.href.replace(/^https?:\/\//, '');
+                window.location.href = `intent://${currentUrl}#Intent;scheme=https;package=com.android.chrome;end`;
+            }
+        }
 
         window.vapi = vapi;
         vapi.on('call-start', () => { setVapiStatus('active'); setIsCalling(true); setVapiError(null); });
@@ -45,10 +61,6 @@ const App = () => {
 
     const toggleCall = async () => {
         if (isCalling || vapiStatus === 'active') { vapi.stop(); return; }
-        
-        // Detect in-app browsers (Facebook, Messenger, Instagram) which often block microphone access
-        const ua = navigator.userAgent || navigator.vendor || window.opera;
-        const isInAppBrowser = (ua.indexOf("FBAN") > -1) || (ua.indexOf("FBAV") > -1) || (ua.indexOf("Instagram") > -1);
         
         if (isInAppBrowser) {
             setVapiStatus('error');
@@ -115,6 +127,17 @@ const App = () => {
 
     return (
         <div style={styles.container}>
+            {isInAppBrowser && (
+                <div style={styles.inAppWarningOverlay}>
+                    <div style={styles.inAppWarningBox}>
+                        <h2 style={{fontSize: '24px', marginBottom: '15px'}}>⚠️ Browser Restricted</h2>
+                        <p style={{marginBottom: '20px', lineHeight: '1.5'}}>
+                            Facebook Messenger blocks microphone access. <br/><br/>
+                            To use the Voice AI Employee, please tap the <strong>3 dots in the top right corner</strong> (⋯) and select <strong>"Open in system browser" / "Open in Safari" / "Open in Chrome"</strong>.
+                        </p>
+                    </div>
+                </div>
+            )}
             <header style={styles.header}>
                 <div style={styles.logoText}>
                     {(clientConfig.business_name || clientConfig.name).toUpperCase().replace(/\s/g, '')}
@@ -241,7 +264,9 @@ const styles = {
     avatarMain: { width: '100%', height: '100%', objectFit: 'cover', transition: 'filter 0.5s' },
     thinkingOverlay: { position: 'absolute', bottom: 0, left: 0, right: 0, background: 'rgba(0,0,0,0.5)', color: '#fff', fontSize: '10px', padding: '4px' },
     callButton: { width: '100%', padding: '12px', borderRadius: '12px', border: 'none', color: '#fff', fontWeight: 'bold', fontSize: '12px', cursor: 'pointer', transition: 'transform 0.1s' },
-    errorText: { fontSize: '9px', color: '#ef4444', marginTop: '8px' }
+    errorText: { fontSize: '9px', color: '#ef4444', marginTop: '8px' },
+    inAppWarningOverlay: { position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.85)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' },
+    inAppWarningBox: { backgroundColor: '#fff', padding: '30px', borderRadius: '20px', maxWidth: '400px', textAlign: 'center', boxShadow: '0 20px 40px rgba(0,0,0,0.3)' }
 };
 
 export default App;
