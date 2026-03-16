@@ -47,13 +47,23 @@ const App = () => {
         if (isCalling || vapiStatus === 'active') { vapi.stop(); return; }
         try {
             setVapiStatus('calling');
+            
+            // Explicitly request microphone permissions. On mobile (especially iOS Safari),
+            // this is required immediately in the user interaction event to avoid blocking audio context.
+            if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+                await navigator.mediaDevices.getUserMedia({ audio: true });
+            }
+
             await vapi.start(clientConfig.vapi_assistant_id);
             setTimeout(() => {
                 setVapiStatus(p => (p === 'calling' ? 'idle' : p));
             }, 15000);
         } catch (err) {
+            console.error("Call error:", err);
             setVapiStatus('error');
-            setVapiError(err.message || "Failed to start call");
+            setVapiError(err.message || "Failed to start call. Ensure mic permissions are granted.");
+            // Make sure to reset state if it fails so user can try again
+            setIsCalling(false);
         }
     };
 
